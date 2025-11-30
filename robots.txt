@@ -1,0 +1,19 @@
+User-agent: *
+# ✅ 公共事業リストは透明性確保のためフルオープン
+Allow: /projects/
+Allow: /public/
+
+# ⛔️ 企業の内部パラメーター（SBCM係数・キャパ）は隠す
+Disallow: /company/capacity/
+Disallow: /api/partners/
+
+# ⛔️ チーム結成ルームとウォレットは絶対秘密
+Disallow: /team/
+Disallow: /wallet/
+Disallow: /contract/
+
+# 🤖 ゼネコン側のクローラー（スクレイピング）を拒否
+User-agent: GeneralContractorBot
+Disallow: /
+
+Sitemap: https://g-cart.gov/sitemap.xml
