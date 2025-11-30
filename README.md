@@ -77,6 +77,12 @@ streamlit run app.py
 | <img src="demo1.png" width="300"> | <img src="demo2.png" width="300"> |
 | *「単独受注不可」を可視化* | *足りないピースを自動マッチング* |
 
+## 📚 Theoretical Background
+G-Cartのアルゴリズムは、地域経済の「漏出（Leakage）」を防ぐための経済理論 **SBCM Economics** に基づいています。
+なぜこのシステムが地方創生に必要なのか、その数学的証明はこちらをご覧ください。
+
+👉 **[理論仕様書 (Theory & Logic)](docs/THEORY.md)**
+
 ## 📝 ライセンス
 
 [MIT License](LICENSE)
