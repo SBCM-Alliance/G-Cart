@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>G-Cart | バーチャル・ゼネコン</title>
+    
+    <!-- PyScript (Lightweight) -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* --- STREAMLIT-LIKE THEME --- */
+        :root {
+            --bg: #ffffff;
+            --text: #31333F;
+            --card-bg: #ffffff;
+            --primary: #FF4B4B; /* Streamlit Red */
+            --secondary: #F0F2F6;
+            --accent: #00CC96;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: var(--text);
+            font-family: "Source Sans Pro", sans-serif; padding: 20px;
+            max-width: 1000px; margin: 0 auto;
+        }
+
+        /* HEADER */
+        header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+        h1 { margin: 0; font-size: 1.8rem; }
+        .user-badge { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
+
+        /* UTIL */
+        .hidden { display: none !important; }
+        .tag { background: #e8e8e8; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; }
+
+        /* CARDS (Amazon Style) */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card {
+            background: var(--card-bg); border: 1px solid #ddd; border-radius: 8px; padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s;
+        }
+        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+        
+        .p-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+        .p-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+        .p-loc { color: #666; font-size: 0.9rem; margin-bottom: 10px; }
+        .p-budget { font-size: 1.5rem; font-weight: bold; color: #333; margin: 10px 0; }
+        
+        .alert-box {
+            background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px;
+            font-size: 0.9rem; margin: 10px 0; display: flex; align-items: center;
+        }
+        .success-box {
+            background: #d4edda; color: #155724; padding: 10px; border-radius: 4px;
+            font-size: 0.9rem; margin: 10px 0;
+        }
+
+        /* BUTTONS */
+        .btn {
+            width: 100%; padding: 10px; border: none; border-radius: 4px; cursor: pointer;
+            font-weight: bold; margin-top: 10px; transition: 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #ff2b2b; }
+        .btn-sec { background: var(--secondary); color: #333; }
+        .btn-sec:hover { background: #e0e2e6; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* PHASE 2: MATCHING (Tinder Style) */
+        .matching-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        @media (max-width: 768px) { .matching-layout { grid-template-columns: 1fr; } }
+
+        .progress-container { background: #eee; border-radius: 10px; height: 20px; width: 100%; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s; }
+        .progress-bar.complete { background: var(--accent); }
+
+        .partner-card {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #eee; padding: 15px 0;
+        }
+        .p-cap { color: #666; font-size: 0.9rem; }
+
+        /* PHASE 3: EXECUTION */
+        .wallet-row { display: flex; gap: 20px; margin-bottom: 30px; }
+        .metric-box { flex: 1; background: #fafafa; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
+        .metric-val { font-size: 1.5rem; font-weight: bold; display: block; }
+        .metric-label { color: #666; font-size: 0.8rem; }
+
+        /* Fake Gantt */
+        .gantt-chart { margin-top: 20px; }
+        .g-row { display: flex; margin-bottom: 10px; align-items: center; }
+        .g-label { width: 100px; font-size: 0.8rem; font-weight: bold; }
+        .g-bar-container { flex: 1; background: #eee; height: 20px; border-radius: 4px; position: relative; }
+        .g-bar { position: absolute; height: 100%; border-radius: 4px; opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display:flex; align-items:center;">
+            <span style="font-size:2rem; margin-right:10px;">🛒</span>
+            <div>
+                <h1 style="line-height:1;">G-Cart</h1>
+                <small style="color:#666;">Government Cart System</small>
+            </div>
+        </div>
+        <div class="user-badge">
+            👤 出木杉土木 (余力: ¥3,000万)
+        </div>
+    </header>
+
+    <!-- PHASE 1: SELECTION -->
+    <div id="p1-selection">
+        <h2 style="border-bottom:2px solid #eee; padding-bottom:10px;">📦 おすすめの公共事業</h2>
+        <div id="project-grid" class="grid">
+            <!-- Python injects cards here -->
+        </div>
+    </div>
+
+    <!-- PHASE 2: MATCHING -->
+    <div id="p2-matching" class="hidden">
+        <button class="btn btn-sec" style="width:auto; margin-bottom:20px;" py-click="back_to_list">← 一覧に戻る</button>
+        
+        <div class="matching-layout">
+            <!-- Left: Project Status -->
+            <div class="card">
+                <span id="m-icon" style="font-size:3rem;">🏗️</span>
+                <h2 id="m-title">Project Name</h2>
+                <p id="m-budget" class="p-budget">¥0</p>
+                <div class="progress-container">
+                    <div id="jv-bar" class="progress-bar"></div>
+                </div>
+                <p style="font-size:0.9rem;">
+                    現在のキャパ: <b id="curr-cap">¥3,000万</b> / 必要: <span id="req-cap">¥0</span>
+                </p>
+                
+                <div id="jv-members" style="margin-top:20px; background:#f9f9f9; padding:10px; border-radius:4px;">
+                    <div style="font-weight:bold; margin-bottom:5px;">結成メンバー (JV)</div>
+                    <div>👤 出木杉土木 (Leader)</div>
+                    <div id="member-list"></div>
+                </div>
+
+                <div id="msg-area"></div>
+                <button id="btn-final" class="btn btn-sec" disabled py-click="go_execution">JV結成完了・入札</button>
+            </div>
+
+            <!-- Right: Recommendations -->
+            <div>
+                <h3>🔍 AI パートナーレコメンド</h3>
+                <p style="font-size:0.8rem; color:#666;">不足している工種・キャパシティを持つ近隣企業</p>
+                <div id="partner-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE 3: EXECUTION -->
+    <div id="p3-execution" class="hidden">
+        <h2>📅 G-Gantt (施工管理)</h2>
+        <div class="alert-box" style="background:#d4edda; color:#155724;">
+            <i class="fas fa-check-circle" style="margin-right:5px;"></i> 入札が確定し、施工フェーズに移行しました。
+        </div>
+
+        <div class="wallet-row">
+            <div class="metric-box">
+                <span class="metric-label">受注総額</span>
+                <span id="ex-total" class="metric-val">¥0</span>
+            </div>
+            <div class="metric-box">
+                <span class="metric-label">即時分配済み</span>
+                <span class="metric-val" style="color:var(--accent);">¥15,000,000</span>
+            </div>
+            <div class="metric-box">
+                <span class="metric-label">プール残高</span>
+                <span class="metric-val">¥35,000,000</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>工程表 (Real-time)</h3>
+            <div class="gantt-chart">
+                <div class="g-row">
+                    <div class="g-label">出木杉土木</div>
+                    <div class="g-bar-container"><div class="g-bar" style="width:40%; left:0; background:#FF4B4B;">準備工 (作業中)</div></div>
+                </div>
+                <div class="g-row">
+                    <div class="g-label">田中舗装</div>
+                    <div class="g-bar-container"><div class="g-bar" style="width:30%; left:40%; background:#ccc;">舗装工 (待機)</div></div>
+                </div>
+                <div class="g-row">
+                    <div class="g-label">柏警備</div>
+                    <div class="g-bar-container"><div class="g-bar" style="width:20%; left:70%; background:#ccc;">交通誘導 (待機)</div></div>
+                </div>
+            </div>
+            
+            <div style="margin-top:30px; text-align:right;">
+                <button class="btn btn-primary" style="width:auto;" onclick="location.reload()">デモ終了 (Reset)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PYTHON LOGIC -->
+    <script type="py">
+        from pyscript import document
+        from pyodide.ffi import create_proxy
+        import js
+
+        # --- DATA ---
+        my_cap = 30000000
+        current_cap = my_cap
+        target_budget = 0
+        
+        projects = [
+            {"id":1, "name": "市道123号線 舗装改修工事", "loc": "柏市・北エリア", "budget": 50000000, "icon": "🚧", "tags": ["舗装", "警備"]},
+            {"id":2, "name": "柏の葉公園 公衆トイレ新設", "loc": "柏市・西エリア", "budget": 80000000, "icon": "🚽", "tags": ["建築", "水道"]},
+            {"id":3, "name": "小学校 通学路ガードレール", "loc": "柏市・中央", "budget": 15000000, "icon": "🛡️", "tags": ["土木"]},
+        ]
+        
+        partners = [
+            {"name": "田中舗装ロード", "type": "舗装", "cap": 30000000},
+            {"name": "柏警備保障", "type": "警備", "cap": 5000000},
+            {"name": "松戸電気サービス", "type": "電気", "cap": 20000000},
+            {"name": "流山水道メンテ", "type": "水道", "cap": 15000000},
+        ]
+
+        # --- LOGIC ---
+        def init():
+            grid = document.getElementById("project-grid")
+            grid.innerHTML = ""
+            
+            for p in projects:
+                div = document.createElement("div")
+                div.className = "card"
+                
+                shortage = p["budget"] - my_cap
+                if shortage > 0:
+                    status = f'<div class="alert-box"><i class="fas fa-exclamation-triangle"></i>&nbsp;単独不可 (不足 ¥{shortage:,})</div>'
+                    btn_cls = "btn-primary"
+                    btn_txt = "🤝 チーム結成 (JV)"
+                else:
+                    status = '<div class="success-box"><i class="fas fa-check"></i>&nbsp;単独受注可能</div>'
+                    btn_cls = "btn-sec"
+                    btn_txt = "🚀 入札へ進む"
+                
+                tags = "".join([f"<span class='tag'>{t}</span>" for t in p["tags"]])
+                
+                div.innerHTML = f"""
+                    <span class="p-icon">{p['icon']}</span>
+                    <div class="p-title">{p['name']}</div>
+                    <div class="p-loc">📍 {p['loc']}</div>
+                    <div class="p-budget">¥{p['budget']:,}</div>
+                    <div style="margin-bottom:10px;">{tags}</div>
+                    {status}
+                """
+                
+                btn = document.createElement("button")
+                btn.className = f"btn {btn_cls}"
+                btn.innerText = btn_txt
+                btn.onclick = lambda e, pr=p: go_matching(pr)
+                
+                div.appendChild(btn)
+                grid.appendChild(div)
+
+        def go_matching(p):
+            global target_budget, current_cap
+            target_budget = p["budget"]
+            current_cap = my_cap
+            
+            # Switch Screen
+            document.getElementById("p1-selection").classList.add("hidden")
+            document.getElementById("p2-matching").classList.remove("hidden")
+            
+            # Setup Left Col
+            document.getElementById("m-icon").innerText = p["icon"]
+            document.getElementById("m-title").innerText = p["name"]
+            document.getElementById("m-budget").innerText = f"¥{p['budget']:,}"
+            document.getElementById("req-cap").innerText = f"¥{p['budget']:,}"
+            document.getElementById("member-list").innerHTML = "" # Clear members
+            
+            # Setup Right Col (Partners)
+            plist = document.getElementById("partner-list")
+            plist.innerHTML = ""
+            
+            for ptr in partners:
+                # Simple recommendation logic (tag match or capacity)
+                is_match = ptr["type"] in p["tags"]
+                match_badge = "✨ 推奨" if is_match else ""
+                
+                row = document.createElement("div")
+                row.className = "card partner-card"
+                row.style.marginBottom = "10px"
+                
+                row.innerHTML = f"""
+                    <div>
+                        <div style="font-weight:bold;">{ptr['name']} <span style="color:#FF4B4B;font-size:0.8rem;">{match_badge}</span></div>
+                        <div class="p-cap">🔧 {ptr['type']} | 余力: ¥{ptr['cap']//10000}万</div>
+                    </div>
+                """
+                btn = document.createElement("button")
+                btn.className = "btn btn-sec"
+                btn.style.width = "auto"
+                btn.style.marginTop = "0"
+                btn.innerText = "＋ 追加"
+                btn.onclick = lambda e, c=ptr['cap'], n=ptr['name'], b=btn: add_partner(c, n, b)
+                
+                row.appendChild(btn)
+                plist.appendChild(row)
+            
+            update_bar()
+
+        def add_partner(cap, name, btn):
+            global current_cap
+            current_cap += cap
+            
+            # Disable button
+            btn.innerText = "追加済"
+            btn.disabled = True
+            
+            # Add to list
+            mlist = document.getElementById("member-list")
+            div = document.createElement("div")
+            div.innerText = f"🤝 {name}"
+            mlist.appendChild(div)
+            
+            update_bar()
+
+        def update_bar():
+            pct = min(100, int((current_cap / target_budget) * 100))
+            bar = document.getElementById("jv-bar")
+            bar.style.width = f"{pct}%"
+            
+            document.getElementById("curr-cap").innerText = f"¥{current_cap:,}"
+            
+            btn = document.getElementById("btn-final")
+            msg = document.getElementById("msg-area")
+            
+            if pct >= 100:
+                bar.classList.add("complete")
+                btn.disabled = False
+                btn.className = "btn btn-primary"
+                msg.innerHTML = '<div class="success-box">🎉 キャパシティ要件をクリアしました！</div>'
+            else:
+                bar.classList.remove("complete")
+                btn.disabled = True
+                btn.className = "btn btn-sec"
+                short = target_budget - current_cap
+                msg.innerHTML = f'<div class="alert-box">あと ¥{short:,} 足りません</div>'
+
+        def go_execution(e):
+            document.getElementById("p2-matching").classList.add("hidden")
+            document.getElementById("p3-execution").classList.remove("hidden")
+            document.getElementById("ex-total").innerText = f"¥{target_budget:,}"
+
+        def back_to_list(e):
+            document.getElementById("p2-matching").classList.add("hidden")
+            document.getElementById("p1-selection").classList.remove("hidden")
+
+        init()
+    </script>
+  </body>
+</html>
