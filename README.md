@@ -1,7 +1,6 @@
 # G-Cart: The Virtual General Contractor System
 ### 🏗️ Democratizing Public Procurement via Algorithms
 
-**こちらは統合されました。 This has been integrated→[pithos](https://github.com/SBCM-Alliance/pithos)**
 
 [![SBCM Economics](https://img.shields.io/badge/Theory-SBCM_Economics-blue)](https://doi.org/10.5281/zenodo.17766604)
 [![Python](https://img.shields.io/badge/Built_with-Streamlit-red)](https://streamlit.io)
